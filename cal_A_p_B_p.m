@@ -1,4 +1,4 @@
-function [ Gamma, A ] = cal_Gamma_p_AND_A_p( M, nu, h, zeta, Q_m, xi_b, c_b)
+function [ A, B ] = cal_A_p_B_p( M, nu, h, zeta, Q_m, xi_b, c_b)
 
 Gamma = zeros(1, M); 
 A     = zeros(1, M); 
