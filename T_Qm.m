@@ -13,7 +13,7 @@ thickness       = [0.02, 2.09, LungLayerThick, 2.67, 0.19]' ./ 100; % cm -> m,
 zeta            = [0.31, 0.1314, LungLayerZeta, 0.1314, 0.31]';
 capa            = [3150, 3396, LungLayerCapa, 3396, 3150]';
 Q_m             = [1125, 4200, LungLayerQ_m, 4200, 1125]';
-xi_b            = 1.59;
+xi_b            = 8.25;
 c_b             = 3600;
 nu              = sqrt(xi_b * c_b ./ zeta);
 T_0             = 38;
@@ -24,10 +24,10 @@ for idx = 1: 1: M
     AccuDepth(idx:M) = AccuDepth(idx:M) - thickness(idx);
 end
 
-Gamma = zeros(1, M); 
-A     = zeros(1, M); 
+A = zeros(1, M); 
+B = zeros(1, M); 
 
-[Gamma, A] = cal_Gamma_p_AND_A_p( M, nu, thickness, zeta, Q_m, xi_b, c_b);
+[A, B] = cal_A_p_B_p( M, nu, thickness, zeta, Q_m, xi_b, c_b);
 
 Depth       = (-25.55) / 100;   % 30   cm
 Interval    = 0.01  / 100;   % 0.01 cm
@@ -36,16 +36,16 @@ Height      = 0     / 100;   % 1    cm
 % calculate the rho and sigma array
 % the value of rho, and sigma at -30 cm is set to be that of 'M_SAR'-th layer
 A_array         = [A(M)];
+B_array         = [B(M)];
 nu_array        = [nu(M)];
 AccuDepth_array = [AccuDepth(M)];
-Gamma_array     = [Gamma(M)];
 Q_m_array       = [Q_m(M)];
 for idx = 1: 1: M
     p   = M + 1 - idx;
     A_array = [A_array, repmat( A(p), 1, int32( thickness(p) / Interval) )];
     nu_array = [nu_array, repmat( nu(p), 1, int32( thickness(p) / Interval) )];
     AccuDepth_array = [AccuDepth_array, repmat( AccuDepth(p), 1, int32( thickness(p) / Interval) )];
-    Gamma_array = [Gamma_array, repmat( Gamma(p), 1, int32( thickness(p) / Interval) )];
+    B_array = [B_array, repmat( B(p), 1, int32( thickness(p) / Interval) )];
     Q_m_array = [Q_m_array, repmat( Q_m(p), 1, int32( thickness(p) / Interval) )];
     % if idx == M
     %     A           = A_tmp';
@@ -58,7 +58,8 @@ end
 
 T_p = zeros( (Height - Depth) / Interval + 1, 1);
 z = [Depth : Interval : Height]';
-T_p = A_array' .* exp( nu_array' .* (z - AccuDepth_array') ) .* ( 1 + Gamma_array' .* exp( (- 2) * nu_array' .* (z - AccuDepth_array') ) ) + T_0 + Q_m_array' / (xi_b * c_b);
+T_p = A_array' .* exp( nu_array' .* (z - AccuDepth_array') ) ...
+    + B_array' .* exp( (-1) * nu_array' .* (z - AccuDepth_array') ) + T_0 + Q_m_array' / ( xi_b * c_b );
 
 % plot T_p
 clf;
